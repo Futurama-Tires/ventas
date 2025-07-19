@@ -50,6 +50,8 @@ Route::middleware('auth')->group(function () {
 
     //Cotizador
     Route::resource('/cotizador-llantas', CotizadorLlantasController::class);
+    Route::get('/obtener-cotizador', [CotizadorLlantasController::class, 'obtenerInventario'])
+        ->name('cotizador.data');
 });
 
 require __DIR__ . '/auth.php';

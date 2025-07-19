@@ -4,62 +4,321 @@ namespace App\Http\Controllers\Cotizador;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Services\Netsuite\NetsuiteService;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class CotizadorLlantasController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        return view('cotizador.index');
+
+  protected NetsuiteService $netsuite;
+
+  public function __construct(NetsuiteService $netsuite)
+  {
+    $this->netsuite = $netsuite;
+  }
+
+  /**
+   * Display a listing of the resource.
+   */
+  public function index()
+  {
+    return view('cotizador.index');
+  }
+
+  public function obtenerInventario(Request $request)
+  {
+    // 1) Parámetros de DataTables
+    $search  = $request->input('search.value', '');
+    $start   = (int) $request->input('start', 0);
+    $length  = (int) $request->input('length', 50);
+    $order   = $request->input('order.0', ['column' => 0, 'dir' => 'asc']);
+    $dir     = strtoupper($order['dir']) === 'DESC' ? 'DESC' : 'ASC';
+
+    // 2) Contar cuántos itemid distintos hay (para recordsTotal)
+    $countSql = "
+            SELECT COUNT(DISTINCT item.itemid) AS total
+            FROM item
+            INNER JOIN (
+              SELECT itemPrice.item
+              FROM itemPrice
+              INNER JOIN currency 
+                ON itemPrice.currencypage = currency.id
+              WHERE currency.name = 'MEX'
+                AND itemPrice.pricelevelname IN (
+                  'SEMI - MAYOREO','MAYOREO','PROMOCION DEL MES',
+                  'NK','PROMOCION POR PRONTO PAGO'
+                )
+            ) itemPrice_SUB ON item.id = itemPrice_SUB.item
+            INNER JOIN (
+              SELECT aggregateItemLocation.item
+              FROM aggregateItemLocation
+              INNER JOIN LOCATION 
+                ON aggregateItemLocation.LOCATION = LOCATION.ID
+              WHERE aggregateItemLocation.quantityavailable > 0
+            ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item
+            LEFT JOIN CUSTOMLIST_NSO_LIST_MARCA 
+              ON item.custitem_nso_marca = CUSTOMLIST_NSO_LIST_MARCA.ID
+            WHERE item.CLASS = '1'
+              " . ($search !== ''
+      ? " AND item.itemid LIKE '%{$search}%'"
+      : '');
+
+    $countResp    = $this->netsuite->suiteqlQuery($countSql);
+    $totalDistinct = intval($countResp['items'][0]['total'] ?? 0);
+
+    // 3) Obtener los itemid de la página actual
+    $distinctSql = "
+            SELECT DISTINCT item.itemid AS itemid
+            FROM item
+            INNER JOIN (
+              SELECT itemPrice.item
+              FROM itemPrice
+              INNER JOIN currency 
+                ON itemPrice.currencypage = currency.id
+              WHERE currency.name = 'MEX'
+                AND itemPrice.pricelevelname IN (
+                  'SEMI - MAYOREO','MAYOREO','PROMOCION DEL MES',
+                  'NK','PROMOCION POR PRONTO PAGO'
+                )
+            ) itemPrice_SUB ON item.id = itemPrice_SUB.item
+            INNER JOIN (
+              SELECT aggregateItemLocation.item
+              FROM aggregateItemLocation
+              INNER JOIN LOCATION 
+                ON aggregateItemLocation.LOCATION = LOCATION.ID
+              WHERE aggregateItemLocation.quantityavailable > 0
+            ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item
+            LEFT JOIN CUSTOMLIST_NSO_LIST_MARCA 
+              ON item.custitem_nso_marca = CUSTOMLIST_NSO_LIST_MARCA.ID
+            WHERE item.CLASS = '1'
+            " . ($search !== ''
+      ? " AND item.itemid LIKE '%{$search}%'"
+      : '') . "
+            ORDER BY item.itemid {$dir}";
+
+    $distinctResp = $this->netsuite->suiteqlQuery($distinctSql, $length, $start);
+    $itemidsPage  = array_column($distinctResp['items'] ?? [], 'itemid');
+
+    // 4) Si no hay itemid, devolvemos vacío
+    if (empty($itemidsPage)) {
+      $rows = collect();
+    } else {
+      // 4a) Detalle de esos itemid sin paginar
+      $inList      = "'" . implode("','", $itemidsPage) . "'";
+      $detailSql   = $this->getBaseQuery()
+        . " AND item.itemid IN ({$inList})";
+      $detailResp  = $this->netsuite->suiteqlQuery($detailSql);
+      $rowsRaw     = $detailResp['items'] ?? [];
+      // 4b) Consolidar
+      $rows = $this->consolidateInventory($rowsRaw);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+    // 5) Aplanar para DataTables
+    $data = $rows
+      ->map(fn($i) => $this->flattenForDatatables($i))
+      ->toArray();
+
+    Log::info($data);
+
+    // 6) Respuesta JSON
+    return response()->json([
+      'draw'            => (int) $request->input('draw'),
+      'recordsTotal'    => $totalDistinct,
+      'recordsFiltered' => $totalDistinct,
+      'data'            => $data,
+    ]);
+  }
+
+
+  protected function getBaseQuery(): string
+  {
+    return "SELECT 
+      item.itemid AS itemid,
+      itemPrice_SUB.pricelevelname AS pricelevelname,
+      itemPrice_SUB.price AS price,
+      aggregateItemLocation_SUB.fullname AS ubicacion,
+      aggregateItemLocation_SUB.quantityavailable AS disponible,
+      aggregateItemLocation_SUB.quantityonhand AS stock_fisico,
+      item.description AS descripcion,
+      item.custitem20 AS iva,
+      item.custitem15 AS medida_equivalente,
+      item.custitem19 AS promocion,
+      item.custitem4 AS oe,
+      item.custitem_nso_uso AS aplicacion,
+      item.custitem_nso_altura AS altura,
+      item.custitem_nso_ancho AS ancho,
+      CUSTOMLIST_NSO_LIST_MARCA.name AS marca
+    FROM item
+    INNER JOIN (
+      SELECT 
+        itemPrice.item,
+        itemPrice.price,
+        itemPrice.pricelevelname
+      FROM itemPrice
+      INNER JOIN currency ON itemPrice.currencypage = currency.id
+      WHERE 
+        currency.name = 'MEX'
+        AND itemPrice.pricelevelname IN (
+          'SEMI - MAYOREO', 
+          'MAYOREO', 
+          'PROMOCION DEL MES', 
+          'NK', 
+          'PROMOCION POR PRONTO PAGO'
+        )
+    ) itemPrice_SUB ON item.id = itemPrice_SUB.item
+    INNER JOIN (
+      SELECT 
+        aggregateItemLocation.item,
+        LOCATION.fullname,
+        aggregateItemLocation.quantityavailable,
+        aggregateItemLocation.quantityonhand
+      FROM aggregateItemLocation
+      INNER JOIN LOCATION 
+        ON aggregateItemLocation.LOCATION = LOCATION.ID
+      WHERE 
+        aggregateItemLocation.LOCATION IN (
+          '65','68','64','67','54','62','61','53','55','63','59','75','74','73','5','8','7','6','11','1','12','3','56','57','14','13','76','9','4','2','52'
+        )
+        AND aggregateItemLocation.quantityavailable > 0
+    ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item
+    LEFT JOIN CUSTOMLIST_NSO_LIST_MARCA 
+      ON item.custitem_nso_marca = CUSTOMLIST_NSO_LIST_MARCA.ID
+    WHERE 
+      item.CLASS = '1'";
+  }
+
+  protected function consolidateInventory(array $items): Collection
+  {
+    return collect($items)
+      ->groupBy('itemid')
+      ->map(fn($group) => [
+        'itemid'              => $group[0]['itemid'] ?? "",
+        'descripcion'         => $group[0]['descripcion'] ?? "",
+        'aplicacion'          => $group[0]['aplicacion'] ?? "",
+        'oe'                  => $group[0]['oe'] ?? "",
+        'medida_equivalente'  => $group[0]['medida_equivalente'] ?? "",
+        'marca'               => $group[0]['marca'] ?? "",
+        'promocion'           => $group[0]['promocion'] ?? "",
+        'precios'             => $group
+          ->whereNotNull('pricelevelname')
+          ->unique('pricelevelname')
+          ->map(fn($i) => [$i['pricelevelname'] => $i['price']])
+          ->collapse(),
+        'ubicaciones'         => $group
+          ->unique('ubicacion')
+          ->map(fn($i) => [$i['ubicacion'] => $i['disponible']])
+          ->collapse(),
+      ])->values();
+  }
+
+  /**
+   * Aplana cada registro para que DataTables lo consuma
+   */
+  protected function flattenForDatatables(array $item): array
+  {
+    // Niveles de precio fijos
+    $niveles = [
+      'SEMI - MAYOREO',
+      'MAYOREO',
+      'PROMOCION DEL MES',
+      'NK',
+      'PROMOCION POR PRONTO PAGO',
+    ];
+
+    // Ubicaciones fijas
+    $ubis = [
+      'MATRIZ',
+      'VICENTE GUERRERO',
+      'VALLEJO',
+      'PONIENTE',
+      'IXTAPALUCA',
+      'QUERETARO',
+      'GUADALAJARA',
+      'OBREGON',
+      'OBREGON MAYOREO',
+      'JOJUTLA',
+      'PLASTICOS',
+      'PLASTICOS',
+      'JORGES',
+      'MISAEL',
+      'CHAMILPA',
+      'AHUATEPEC',
+      'VINILOS',
+      'BODEGA DE CAMION',
+    ];
+
+    $row = [
+      'itemid'             => $item['itemid'],
+      'descripcion'        => $item['descripcion'],
+      'aplicacion'         => $item['aplicacion'],
+      'oe'                 => $item['oe'],
+      'medida_equivalente' => $item['medida_equivalente'],
+      'marca'              => $item['marca'],
+      'promocion'          => $item['promocion'],
+    ];
+
+    // Agrega precios en columnas fijas
+    foreach ($niveles as $nivel) {
+      $row[Str::slug($nivel, '_')]
+        = number_format($item['precios'][$nivel] ?? 0, 2);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
+    // Agrega stock por ubicación en columnas fijas
+    foreach ($ubis as $ubi) {
+      $key = Str::slug($ubi, '_');
+      $row[$key] = (int) ($item['ubicaciones'][$ubi] ?? 0);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+    return $row;
+  }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
+  /**
+   * Show the form for creating a new resource.
+   */
+  public function create()
+  {
+    //
+  }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+  /**
+   * Store a newly created resource in storage.
+   */
+  public function store(Request $request)
+  {
+    //
+  }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
+  /**
+   * Display the specified resource.
+   */
+  public function show(string $id)
+  {
+    //
+  }
+
+  /**
+   * Show the form for editing the specified resource.
+   */
+  public function edit(string $id)
+  {
+    //
+  }
+
+  /**
+   * Update the specified resource in storage.
+   */
+  public function update(Request $request, string $id)
+  {
+    //
+  }
+
+  /**
+   * Remove the specified resource from storage.
+   */
+  public function destroy(string $id)
+  {
+    //
+  }
 }
