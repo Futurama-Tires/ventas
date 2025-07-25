@@ -30,39 +30,74 @@ class CotizadorLlantasController extends Controller
   public function obtenerInventario(Request $request)
   {
     // 1) Parámetros de DataTables
+    $ancho = (int) $request->input('ancho', 0);
+    $alto = (int) $request->input('alto', 0);
+    $rin = $request->input('rin');
+    $rinValue = (is_null($rin) || $rin === '') ? 0 : (float) $rin;
+    $marca = $request->input('marca');
+    $aplicacion = $request->input('aplicacion');
+    //$nivelPrecio = $request->input('nivel_precio');
+    $nivelesPrecio = $request->input('niveles_precio', []); // Cambiado a array
+
+
+
     $search  = $request->input('search.value', '');
     $start   = (int) $request->input('start', 0);
     $length  = (int) $request->input('length', 50);
     $order   = $request->input('order.0', ['column' => 0, 'dir' => 'asc']);
     $dir     = strtoupper($order['dir']) === 'DESC' ? 'DESC' : 'ASC';
 
+    $condicionNivelesPrecio = '';
+    if (!empty($nivelesPrecio)) {
+      // Escapar valores para SQL
+      $nivelesEscapados = array_map(function ($nivel) {
+        return "'" . addslashes($nivel) . "'";
+      }, $nivelesPrecio);
+
+      $listaNiveles = implode(',', $nivelesEscapados);
+      $condicionNivelesPrecio = " AND itemPrice.pricelevelname IN ($listaNiveles)";
+    }
+
     // 2) Contar cuántos itemid distintos hay (para recordsTotal)
     $countSql = "
-            SELECT COUNT(DISTINCT item.itemid) AS total
-            FROM item
-            INNER JOIN (
-              SELECT itemPrice.item
-              FROM itemPrice
-              INNER JOIN currency 
-                ON itemPrice.currencypage = currency.id
-              WHERE currency.name = 'MEX'
-                AND itemPrice.pricelevelname IN (
-                  'SEMI - MAYOREO','MAYOREO','PROMOCION DEL MES',
-                  'NK','PROMOCION POR PRONTO PAGO'
-                )
-            ) itemPrice_SUB ON item.id = itemPrice_SUB.item
-            INNER JOIN (
-              SELECT aggregateItemLocation.item
-              FROM aggregateItemLocation
-              INNER JOIN LOCATION 
-                ON aggregateItemLocation.LOCATION = LOCATION.ID
-              WHERE aggregateItemLocation.quantityavailable > 0
-            ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item
-            LEFT JOIN CUSTOMLIST_NSO_LIST_MARCA 
-              ON item.custitem_nso_marca = CUSTOMLIST_NSO_LIST_MARCA.ID
-            WHERE item.CLASS = '1'
-              " . ($search !== ''
+    SELECT COUNT(DISTINCT item.itemid) AS total
+    FROM item
+    INNER JOIN (
+      SELECT itemPrice.item, itemPrice.pricelevelname
+      FROM itemPrice
+      INNER JOIN currency 
+        ON itemPrice.currencypage = currency.id
+      WHERE currency.name = 'MEX'
+        AND itemPrice.pricelevelname IN (
+          'SEMI - MAYOREO','MAYOREO','PROMOCION DEL MES',
+          'NK','PROMOCION POR PRONTO PAGO'
+        )
+          {$condicionNivelesPrecio}
+    ) itemPrice_SUB ON item.id = itemPrice_SUB.item
+    INNER JOIN (
+      SELECT aggregateItemLocation.item
+      FROM aggregateItemLocation
+      INNER JOIN LOCATION 
+        ON aggregateItemLocation.LOCATION = LOCATION.ID
+      WHERE aggregateItemLocation.quantityavailable > 0
+    ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item
+    LEFT JOIN CUSTOMLIST_NSO_LIST_MARCA 
+      ON item.custitem_nso_marca = CUSTOMLIST_NSO_LIST_MARCA.ID
+    LEFT JOIN customlist_nso_list_diametro_rin 
+      ON item.custitem_diametro_rin = customlist_nso_list_diametro_rin.id
+    WHERE item.CLASS = '1'
+    " . ($search !== ''
       ? " AND item.itemid LIKE '%{$search}%'"
+      : '') . ($ancho !== 0
+      ? " AND item.custitem_nso_ancho = '{$ancho}'"
+      : '') . ($alto !== 0
+      ? " AND item.custitem_nso_altura = '{$alto}'"
+      : '') . ($rinValue !== 0
+      ? " AND customlist_nso_list_diametro_rin.name = '{$rinValue}'"
+      : '') . ($marca !== ''
+      ? " AND CUSTOMLIST_NSO_LIST_MARCA.name LIKE '%{$marca}%'"
+      : '') . ($aplicacion !== ''
+      ? " AND item.custitem_nso_uso LIKE '%{$aplicacion}%'"
       : '');
 
     $countResp    = $this->netsuite->suiteqlQuery($countSql);
@@ -70,33 +105,46 @@ class CotizadorLlantasController extends Controller
 
     // 3) Obtener los itemid de la página actual
     $distinctSql = "
-            SELECT DISTINCT item.itemid AS itemid
-            FROM item
-            INNER JOIN (
-              SELECT itemPrice.item
-              FROM itemPrice
-              INNER JOIN currency 
-                ON itemPrice.currencypage = currency.id
-              WHERE currency.name = 'MEX'
-                AND itemPrice.pricelevelname IN (
-                  'SEMI - MAYOREO','MAYOREO','PROMOCION DEL MES',
-                  'NK','PROMOCION POR PRONTO PAGO'
-                )
-            ) itemPrice_SUB ON item.id = itemPrice_SUB.item
-            INNER JOIN (
-              SELECT aggregateItemLocation.item
-              FROM aggregateItemLocation
-              INNER JOIN LOCATION 
-                ON aggregateItemLocation.LOCATION = LOCATION.ID
-              WHERE aggregateItemLocation.quantityavailable > 0
-            ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item
-            LEFT JOIN CUSTOMLIST_NSO_LIST_MARCA 
-              ON item.custitem_nso_marca = CUSTOMLIST_NSO_LIST_MARCA.ID
-            WHERE item.CLASS = '1'
-            " . ($search !== ''
+    SELECT DISTINCT item.itemid AS itemid
+    FROM item
+    INNER JOIN (
+      SELECT itemPrice.item, itemPrice.pricelevelname
+      FROM itemPrice
+      INNER JOIN currency 
+        ON itemPrice.currencypage = currency.id
+      WHERE currency.name = 'MEX'
+        AND itemPrice.pricelevelname IN (
+          'SEMI - MAYOREO','MAYOREO','PROMOCION DEL MES',
+          'NK','PROMOCION POR PRONTO PAGO'
+        )
+        {$condicionNivelesPrecio}
+    ) itemPrice_SUB ON item.id = itemPrice_SUB.item
+    INNER JOIN (
+      SELECT aggregateItemLocation.item
+      FROM aggregateItemLocation
+      INNER JOIN LOCATION 
+        ON aggregateItemLocation.LOCATION = LOCATION.ID
+      WHERE aggregateItemLocation.quantityavailable > 0
+    ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item
+    LEFT JOIN CUSTOMLIST_NSO_LIST_MARCA 
+      ON item.custitem_nso_marca = CUSTOMLIST_NSO_LIST_MARCA.ID
+    LEFT JOIN customlist_nso_list_diametro_rin 
+      ON item.custitem_diametro_rin = customlist_nso_list_diametro_rin.id
+    WHERE item.CLASS = '1'
+    " . ($search !== ''
       ? " AND item.itemid LIKE '%{$search}%'"
+      : '') . ($ancho !== 0
+      ? " AND item.custitem_nso_ancho = '{$ancho}'"
+      : '') . ($alto !== 0
+      ? " AND item.custitem_nso_altura = '{$alto}'"
+      : '') . ($rinValue !== 0
+      ? " AND customlist_nso_list_diametro_rin.name = '{$rinValue}'"
+      : '') . ($marca !== ''
+      ? " AND CUSTOMLIST_NSO_LIST_MARCA.name LIKE '%{$marca}%'"
+      : '') . ($aplicacion !== ''
+      ? " AND item.custitem_nso_uso LIKE '%{$aplicacion}%'"
       : '') . "
-            ORDER BY item.itemid {$dir}";
+    ORDER BY item.itemid {$dir}";
 
     $distinctResp = $this->netsuite->suiteqlQuery($distinctSql, $length, $start);
     $itemidsPage  = array_column($distinctResp['items'] ?? [], 'itemid');
@@ -107,8 +155,7 @@ class CotizadorLlantasController extends Controller
     } else {
       // 4a) Detalle de esos itemid sin paginar
       $inList      = "'" . implode("','", $itemidsPage) . "'";
-      $detailSql   = $this->getBaseQuery()
-        . " AND item.itemid IN ({$inList})";
+      $detailSql   = $this->getBaseQuery() . " AND item.itemid IN ({$inList})";
       $detailResp  = $this->netsuite->suiteqlQuery($detailSql);
       $rowsRaw     = $detailResp['items'] ?? [];
       // 4b) Consolidar
@@ -120,7 +167,7 @@ class CotizadorLlantasController extends Controller
       ->map(fn($i) => $this->flattenForDatatables($i))
       ->toArray();
 
-    Log::info($data);
+    //Log::info($data);
 
     // 6) Respuesta JSON
     return response()->json([
@@ -191,7 +238,89 @@ class CotizadorLlantasController extends Controller
 
   protected function consolidateInventory(array $items): Collection
   {
+
+    $gruposUbicaciones = [
+      'CHAMILPA' => [
+        'BOD TEMPO 1',
+        'BOD TEMPO 25',
+        'BOD TEMPO 26',
+        'BOD TEMPO 5',
+        'CHAMILPA LOCAL 14',
+        'CHAMILPA LOCAL 17',
+        'CHAMILPA LOCAL 5',
+      ],
+      'AHUATEPEC' => [
+        'AHUATEPEC 10',
+        'AHUATEPEC',
+      ],
+      'OBREGON MAYOREO' => [
+        'OBREGON MAY',
+        'OBREGON A',
+        'OBREGON B',
+      ],
+
+    ];
+
     return collect($items)
+      ->groupBy('itemid')
+      ->map(function ($group) use ($gruposUbicaciones) {
+        $ubicacionesReales = $group
+          ->unique('ubicacion')
+          ->map(fn($i) => [$i['ubicacion'] => $i['disponible'] ?? 0])
+          ->collapse();
+
+        // Procesamos los grupos de ubicaciones
+        $ubicacionesConsolidadas = [];
+        foreach ($gruposUbicaciones as $nombreGrupo => $ubicacionesGrupo) {
+          $stockTotal = 0;
+
+          foreach ($ubicacionesGrupo as $ubicacion) {
+            if (isset($ubicacionesReales[$ubicacion])) {
+              $stockTotal += $ubicacionesReales[$ubicacion];
+            }
+          }
+
+          // Aplicamos el límite de 100
+          $ubicacionesConsolidadas[$nombreGrupo] = ($stockTotal > 100) ? 100 : $stockTotal;
+        }
+
+        // Agregamos las ubicaciones no consolidadas
+        foreach ($ubicacionesReales as $ubicacion => $stock) {
+          $perteneceAGrupo = false;
+
+          foreach ($gruposUbicaciones as $ubicacionesGrupo) {
+            if (in_array($ubicacion, $ubicacionesGrupo)) {
+              $perteneceAGrupo = true;
+              break;
+            }
+          }
+
+          if (!$perteneceAGrupo) {
+            $ubicacionesConsolidadas[$ubicacion] = ($stock > 100) ? 100 : $stock;
+          }
+        }
+
+        return [
+          'itemid'              => $group[0]['itemid'] ?? "",
+          'descripcion'         => $group[0]['descripcion'] ?? "",
+          'aplicacion'          => $group[0]['aplicacion'] ?? "",
+          'oe'                  => $group[0]['oe'] ?? "",
+          'medida_equivalente'  => $group[0]['medida_equivalente'] ?? "",
+          'marca'               => $group[0]['marca'] ?? "",
+          'promocion'           => $group[0]['promocion'] ?? "",
+          'precios'             => $group
+            ->whereNotNull('pricelevelname')
+            ->unique('pricelevelname')
+            ->map(fn($i) => [$i['pricelevelname'] => $i['price']])
+            ->collapse(),
+          'ubicaciones'         => collect($ubicacionesConsolidadas),
+          'ubicaciones_reales'  => $ubicacionesReales,
+        ];
+      })->values();
+
+
+
+    /*return collect($items)
       ->groupBy('itemid')
       ->map(fn($group) => [
         'itemid'              => $group[0]['itemid'] ?? "",
@@ -208,9 +337,18 @@ class CotizadorLlantasController extends Controller
           ->collapse(),
         'ubicaciones'         => $group
           ->unique('ubicacion')
-          ->map(fn($i) => [$i['ubicacion'] => $i['disponible']])
+          ->map(function ($i) {
+            $stock = $i['disponible'] ?? 0;
+            return [
+              $i['ubicacion'] => ($stock > 100) ? 100 : $stock
+            ];
+          })
           ->collapse(),
-      ])->values();
+        'ubicaciones_reales' => $group // Mantenemos los valores reales por si se necesitan
+          ->unique('ubicacion')
+          ->map(fn($i) => [$i['ubicacion'] => $i['disponible'] ?? 0])
+          ->collapse(),
+      ])->values();*/
   }
 
   /**
@@ -268,7 +406,8 @@ class CotizadorLlantasController extends Controller
     // Agrega stock por ubicación en columnas fijas
     foreach ($ubis as $ubi) {
       $key = Str::slug($ubi, '_');
-      $row[$key] = (int) ($item['ubicaciones'][$ubi] ?? 0);
+      $stock = (int) ($item['ubicaciones'][$ubi] ?? 0);
+      $row[$key] = ($stock > 100) ? 100 : $stock;
     }
 
     return $row;
