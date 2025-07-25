@@ -228,8 +228,7 @@
 
                 <div class="form-label">Aplicación</div>
                 <div class="mb-3">
-                    <input type="text" placeholder="ALL TERRAIN" name="aplicacion" id="aplicacion"
-                        class="form-control form-select">
+                    <input type="text" name="aplicacion" id="aplicacion" class="form-control form-select">
                 </div>
 
 
@@ -348,14 +347,16 @@
 
             const select = new TomSelect('#aplicacion', {
                 options: aplicaciones.map(aplicacion => ({
-                    value: aplicacion.normalize('NFD').replace(/[\u0300-\u036f]/g,""),
+                    value: aplicacion.normalize('NFD').replace(/[\u0300-\u036f]/g,
+                        ""), // Normaliza caracteres acentuados
                     text: aplicacion
                 })),
                 create: false,
-                maxItems: 1, // Esto limita a seleccionar solo un elemento
+                maxItems: 3, // Esto limita a seleccionar solo un elemento
                 maxOptions: true,
+                plugins: ['remove_button'],
                 searchField: 'text',
-                placeholder: 'ALL TERRAIN',
+                placeholder: 'Seleccione aplicación (máx. 3)',
                 allowEmptyOption: false,
                 render: {
                     option: function(data, escape) {
@@ -365,7 +366,7 @@
                         return '<div class="no-results">No se encontraron resultados para "' + escape(
                             data.input) + '"</div>';
                     }
-                }
+                },
             });
         });
     </script>
@@ -384,8 +385,9 @@
                         d.ancho = $('#ancho').val();
                         d.rin = $('#rin').val();
                         d.marca = $('#marca').val();
-                        d.aplicacion = $('#aplicacion').val();
+                        //d.aplicacion = $('#aplicacion').val();
                         //d.nivel_precio = $('#nivel_precio').val();
+                        d.aplicacion = $('#aplicacion').val(); // Tom Select ya maneja múltiples valores
                         d.niveles_precio = $('input[name="niveles_precio[]"]:checked').map(function() {
                             return this.value;
                         }).get();
@@ -613,7 +615,7 @@
                 } else {
                     $('#btnReset').addClass('disabled');
                 }
-                
+
             }
         });
     </script>

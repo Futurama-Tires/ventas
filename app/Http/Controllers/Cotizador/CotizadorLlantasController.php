@@ -35,11 +35,9 @@ class CotizadorLlantasController extends Controller
     $rin = $request->input('rin');
     $rinValue = (is_null($rin) || $rin === '') ? 0 : (float) $rin;
     $marca = $request->input('marca');
-    $aplicacion = $request->input('aplicacion');
-    //$nivelPrecio = $request->input('nivel_precio');
+    $aplicaciones = $request->input('aplicacion');
     $nivelesPrecio = $request->input('niveles_precio', []); // Cambiado a array
-
-
+    log::info($aplicaciones);
 
     $search  = $request->input('search.value', '');
     $start   = (int) $request->input('start', 0);
@@ -57,6 +55,30 @@ class CotizadorLlantasController extends Controller
       $listaNiveles = implode(',', $nivelesEscapados);
       $condicionNivelesPrecio = " AND itemPrice.pricelevelname IN ($listaNiveles)";
     }
+
+    // Construir condición para aplicaciones
+    $condicionAplicacion = '';
+    if (!empty($aplicaciones)) {
+      $aplicaciones = explode(',', $aplicaciones);
+
+      if (is_array($aplicaciones)) {
+        // Si es array (múltiples selecciones)
+        $aplicacionesEscapadas = array_map(function ($app) {
+          return "'%" . addslashes($app) . "%'";
+        }, $aplicaciones);
+
+        $condicionAplicacion = " AND (";
+        $condicionAplicacion .= implode(" OR ", array_map(function ($app) {
+          return "item.custitem_nso_uso LIKE {$app}";
+        }, $aplicacionesEscapadas));
+        $condicionAplicacion .= ")";
+      } else {
+        // Si es string (una sola selección - compatibilidad hacia atrás)
+        $condicionAplicacion = " AND item.custitem_nso_uso LIKE '%" . addslashes($aplicaciones) . "%'";
+      }
+    }
+
+    log::info($condicionAplicacion);
 
     // 2) Contar cuántos itemid distintos hay (para recordsTotal)
     $countSql = "
@@ -96,9 +118,9 @@ class CotizadorLlantasController extends Controller
       ? " AND customlist_nso_list_diametro_rin.name = '{$rinValue}'"
       : '') . ($marca !== ''
       ? " AND CUSTOMLIST_NSO_LIST_MARCA.name LIKE '%{$marca}%'"
-      : '') . ($aplicacion !== ''
-      ? " AND item.custitem_nso_uso LIKE '%{$aplicacion}%'"
-      : '');
+      : '') . $condicionAplicacion;
+
+    log::info("SQL de conteo: {$countSql}");
 
     $countResp    = $this->netsuite->suiteqlQuery($countSql);
     $totalDistinct = intval($countResp['items'][0]['total'] ?? 0);
@@ -141,9 +163,7 @@ class CotizadorLlantasController extends Controller
       ? " AND customlist_nso_list_diametro_rin.name = '{$rinValue}'"
       : '') . ($marca !== ''
       ? " AND CUSTOMLIST_NSO_LIST_MARCA.name LIKE '%{$marca}%'"
-      : '') . ($aplicacion !== ''
-      ? " AND item.custitem_nso_uso LIKE '%{$aplicacion}%'"
-      : '') . "
+      : '') . $condicionAplicacion . "
     ORDER BY item.itemid {$dir}";
 
     $distinctResp = $this->netsuite->suiteqlQuery($distinctSql, $length, $start);
