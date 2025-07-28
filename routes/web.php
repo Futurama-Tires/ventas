@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 use App\Livewire\Cotizador\CotizadorLlantas;
 use App\Http\Controllers\Cotizador\CotizadorLlantasController;
+use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,19 @@ Route::middleware('auth')->group(function () {
     Route::resource('/cotizador-llantas', CotizadorLlantasController::class);
     Route::get('/obtener-cotizador', [CotizadorLlantasController::class, 'obtenerInventario'])
         ->name('cotizador.data');
+        
+    Route::post('/exportar-inventario', [CotizadorLlantasController::class, 'exportarInventario'])
+        ->name('exportar.inventario');
+
+    Route::get('/descargar-exportacion/{archivo}', function ($archivo) {
+        $ruta = 'exports/' . $archivo;
+
+        if (!Storage::exists($ruta)) {
+            abort(404);
+        }
+
+        return Storage::download($ruta, $archivo);
+    })->name('descargar.exportacion');
 });
 
 require __DIR__ . '/auth.php';

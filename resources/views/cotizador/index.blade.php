@@ -282,6 +282,25 @@
                         </svg> Borrar filtros</a>
                 </div>
 
+                <div class="offcanvas-footer mt-auto p-3">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="tipo_exportacion" id="exportar_filtros"
+                            value="filtros" checked>
+                        <label class="form-check-label" for="exportar_filtros">
+                            Exportar con filtros actuales
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="tipo_exportacion" id="exportar_todo"
+                            value="todo">
+                        <label class="form-check-label" for="exportar_todo">
+                            Exportar todo el inventario
+                        </label>
+                    </div>
+                    <button class="btn btn-primary w-100" id="btnExportar">
+                        <i class="fas fa-file-excel me-2"></i> Exportar a Excel
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -617,6 +636,43 @@
                 }
 
             }
+        });
+    </script>
+
+    <script>
+        $('#btnExportar').on('click', function() {
+            const exportarTodo = $('#exportar_todo').is(':checked');
+
+            $.ajax({
+                url: '/exportar-inventario',
+                method: 'POST',
+                data: {
+                    descargar_todo: exportarTodo,
+                    background: true, // Procesar en segundo plano
+                    // Puedes incluir otros filtros si es necesario
+                    _token: '{{ csrf_token() }}',
+                    search: '', //$('#tablaInventario_filter input').val(),
+                    alto: $('#alto').val(),
+                    ancho: $('#ancho').val(),
+                    rin: $('#rin').val(),
+                    marca: $('#marca').val(),
+                    aplicacion: $('#aplicacion').val(), // Tom Select ya maneja múltiples valores
+                    niveles_precio: $('input[name="niveles_precio[]"]:checked').map(function() {
+                        return this.value;
+                    }).get() ?? [],
+                },
+                success: function(response) {
+                    if (response.status === 'queued') {
+                        Swal.fire({
+                            title: 'Exportación en proceso',
+                            text: response.message,
+                            icon: 'info',
+                            confirmButtonText: 'Aceptar'
+                        });
+
+                    }
+                }
+            });
         });
     </script>
 @endsection

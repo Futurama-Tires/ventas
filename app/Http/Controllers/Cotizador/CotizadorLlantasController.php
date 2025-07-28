@@ -8,6 +8,9 @@ use App\Services\Netsuite\NetsuiteService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use App\Jobs\Cotizador\ExportarInventarioJob;
+use App\Exports\Cotizador\InventarioExport;
+use Maatwebsite\Excel\Excel;
 
 class CotizadorLlantasController extends Controller
 {
@@ -29,6 +32,16 @@ class CotizadorLlantasController extends Controller
 
   public function obtenerInventario(Request $request)
   {
+    /*Log::info('Obteniendo inventario con filtros', [
+      'request' => $request->all(),
+      'ancho' => $request->input('ancho', 0),
+      'alto' => $request->input('alto', 0),
+      'rin' => $request->input('rin'),
+      'marca' => $request->input('marca'),
+      'aplicaciones' => $request->input('aplicacion'),
+      'niveles_precio' => $request->input('niveles_precio', [])
+    ]);*/
+
     // 1) Parámetros de DataTables
     $ancho = (int) $request->input('ancho', 0);
     $alto = (int) $request->input('alto', 0);
@@ -37,7 +50,6 @@ class CotizadorLlantasController extends Controller
     $marca = $request->input('marca');
     $aplicaciones = $request->input('aplicacion');
     $nivelesPrecio = $request->input('niveles_precio', []); // Cambiado a array
-    log::info($aplicaciones);
 
     $search  = $request->input('search.value', '');
     $start   = (int) $request->input('start', 0);
@@ -77,8 +89,6 @@ class CotizadorLlantasController extends Controller
         $condicionAplicacion = " AND item.custitem_nso_uso LIKE '%" . addslashes($aplicaciones) . "%'";
       }
     }
-
-    log::info($condicionAplicacion);
 
     // 2) Contar cuántos itemid distintos hay (para recordsTotal)
     $countSql = "
@@ -120,7 +130,7 @@ class CotizadorLlantasController extends Controller
       ? " AND CUSTOMLIST_NSO_LIST_MARCA.name LIKE '%{$marca}%'"
       : '') . $condicionAplicacion;
 
-    log::info("SQL de conteo: {$countSql}");
+    //Log::info('SQL de conteo de itemid distintos:', ['sql' => $countSql]);
 
     $countResp    = $this->netsuite->suiteqlQuery($countSql);
     $totalDistinct = intval($countResp['items'][0]['total'] ?? 0);
@@ -166,6 +176,8 @@ class CotizadorLlantasController extends Controller
       : '') . $condicionAplicacion . "
     ORDER BY item.itemid {$dir}";
 
+    //log::info('SQL de itemid distintos:', ['sql' => $distinctSql]);
+
     $distinctResp = $this->netsuite->suiteqlQuery($distinctSql, $length, $start);
     $itemidsPage  = array_column($distinctResp['items'] ?? [], 'itemid');
 
@@ -186,8 +198,6 @@ class CotizadorLlantasController extends Controller
     $data = $rows
       ->map(fn($i) => $this->flattenForDatatables($i))
       ->toArray();
-
-    //Log::info($data);
 
     // 6) Respuesta JSON
     return response()->json([
@@ -432,6 +442,18 @@ class CotizadorLlantasController extends Controller
 
     return $row;
   }
+
+  public function exportarInventario(Request $request)
+  {
+    // Crear job para procesar en background
+    ExportarInventarioJob::dispatch(auth()->user());
+
+    return response()->json([
+      'status' => 'queued',
+      'message' => 'La exportación se está procesando en segundo plano. Se notificará cuando esté lista.'
+    ]);
+  }
+
 
   /**
    * Show the form for creating a new resource.

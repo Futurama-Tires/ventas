@@ -114,4 +114,27 @@ class NetsuiteService
             throw $e;
         }
     }
+
+    //Para generar mi excel de cotizador
+    public function suiteqlQueryAll(string $query)
+    {
+        $allResults = [];
+        $limit = 1000;
+        $offset = 0;
+
+        do {
+            $response = $this->suiteqlQuery($query, $limit, $offset);
+
+            if (!isset($response['items'])) {
+                throw new \Exception('Unexpected response structure from SuiteQL.');
+            }
+
+            $items = $response['items'];
+
+            $allResults = array_merge($allResults, $items);
+            $offset += $limit;
+        } while (count($items) === $limit); // Si se devuelve menos que el límite, ya no hay más datos
+
+        return $allResults;
+    }
 }
