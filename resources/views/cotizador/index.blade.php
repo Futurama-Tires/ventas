@@ -44,8 +44,8 @@
                                 Aplicar filtros
                             </a>
 
-                            <a href="#" class="btn btn-primary d-none d-md-inline-block" data-bs-toggle="modal"
-                                data-bs-target="#modalTraspaso">
+                            <a href="{{ route('exportar.inventario') }}" onclick="showLoading()"
+                                class="btn btn-primary d-none d-md-inline-block btnExportar">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                     stroke-linejoin="round"
@@ -58,8 +58,8 @@
                                 Descargar cotizador
                             </a>
 
-                            <a href="#" class="btn btn-primary d-md-none btn-icon" data-bs-toggle="modal"
-                                data-bs-target="#modalTraspaso">
+                            <a href="{{ route('exportar.inventario') }}"
+                                class="btn btn-primary d-md-none btn-icon btnExportar" onclick="showLoading()">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                     stroke-linejoin="round"
@@ -70,8 +70,6 @@
                                     <path d="M12 4l0 12" />
                                 </svg>
                             </a>
-
-
                         </div>
                     </div>
                 </div>
@@ -82,76 +80,13 @@
         <div class="page-body">
             <div class="container-xl">
                 <div class="row g-2">
-                    {{-- <div class="col-12 bg-white px-3 py-2">
-                        <div
-                            class=" d-sm-inline d-lg-flex flex-column flex-md-row align-items-center justify-content-between">
-                            <div class="row mb-sm-2 mb-xl-0">
-                                <label class="col-2 col-form-label">Ancho</label>
-                                <div class="col">
-                                    <input type="number" placeholder="175" name="ancho" id="ancho"
-                                        class="form-control">
-                                </div>
-                            </div>
-
-
-                            <div class="row mb-sm-2 mb-xl-0">
-                                <label class="col-2 col-form-label">Alto</label>
-                                <div class="col">
-                                    <input type="number" placeholder="60" name="alto" id="alto"
-                                        class="form-control">
-                                </div>
-                            </div>
-
-
-                            <div class="row mb-sm-2 mb-xl-0">
-                                <label class="col-2 col-form-label">Rin</label>
-                                <div class="col">
-                                    <input type="number" placeholder="14" name="rin" id="rin"
-                                        class="form-control">
-                                </div>
-                            </div>
-                            <div class="row mb-sm-3 mb-xl-0">
-                                <label class="col-2 col-form-label">Marca</label>
-                                <div class="col">
-                                    <input type="text" placeholder="TOYO" name="marca" id="marca"
-                                        class="form-control">
-                                </div>
-                            </div>
-
-                            <div class="row mb-sm-2 mb-xl-0">
-                                <label class="col-2 col-form-label">Aplicacion</label>
-                                <div class="col">
-                                    <input type="number" placeholder="CARRETERA" name="aplicacion" id="aplicacion"
-                                        class="form-control">
-                                </div>
-                            </div>
-
-                            <div>
-                                <button type="btn" class="btn btn-success w-100" id="btnBuscar">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round"
-                                        class="icon icon-tabler icons-tabler-outline icon-tabler-adjustments">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
-                                        <path d="M6 4v4" />
-                                        <path d="M6 12v8" />
-                                        <path d="M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
-                                        <path d="M12 4v10" />
-                                        <path d="M12 18v2" />
-                                        <path d="M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
-                                        <path d="M18 4v1" />
-                                        <path d="M18 9v11" />
-                                    </svg>
-                                    Aplicar filtros
-                                </button>
-                            </div>
-                        </div>
-                    </div> --}}
-
 
                     <div class="card">
+                        <div class="progress progress-sm" id="loadingProgress">
+                            <div class="progress-bar progress-bar-indeterminate" style="display: none;"></div>
+                        </div>
                         <div class="table-responsive px-1">
+
                             <table id="tablaInventario" class="table card-table table-vcenter">
                                 <thead>
                                     <tr>
@@ -198,6 +133,7 @@
         </div>
     </div>
 
+    {{-- Off canvas para filtros --}}
     <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasStart" aria-labelledby="offcanvasStartLabel">
         <div class="offcanvas-header">
             <h2 class="offcanvas-title" id="offcanvasStartLabel">Filtros</h2>
@@ -280,26 +216,6 @@
                             <path d="M18 6l-12 12" />
                             <path d="M6 6l12 12" />
                         </svg> Borrar filtros</a>
-                </div>
-
-                <div class="offcanvas-footer mt-auto p-3">
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="tipo_exportacion" id="exportar_filtros"
-                            value="filtros" checked>
-                        <label class="form-check-label" for="exportar_filtros">
-                            Exportar con filtros actuales
-                        </label>
-                    </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="tipo_exportacion" id="exportar_todo"
-                            value="todo">
-                        <label class="form-check-label" for="exportar_todo">
-                            Exportar todo el inventario
-                        </label>
-                    </div>
-                    <button class="btn btn-primary w-100" id="btnExportar">
-                        <i class="fas fa-file-excel me-2"></i> Exportar a Excel
-                    </button>
                 </div>
             </div>
         </div>
@@ -640,38 +556,17 @@
     </script>
 
     <script>
-        $('#btnExportar').on('click', function() {
-            const exportarTodo = $('#exportar_todo').is(':checked');
+        $(document).ready(function() {
+            $('.btnExportar').on('click', function() {
+                $('#loadingProgress').show();
+                $('.btnExportar').addClass('disabled');
 
-            $.ajax({
-                url: '/exportar-inventario',
-                method: 'POST',
-                data: {
-                    descargar_todo: exportarTodo,
-                    background: true, // Procesar en segundo plano
-                    // Puedes incluir otros filtros si es necesario
-                    _token: '{{ csrf_token() }}',
-                    search: '', //$('#tablaInventario_filter input').val(),
-                    alto: $('#alto').val(),
-                    ancho: $('#ancho').val(),
-                    rin: $('#rin').val(),
-                    marca: $('#marca').val(),
-                    aplicacion: $('#aplicacion').val(), // Tom Select ya maneja múltiples valores
-                    niveles_precio: $('input[name="niveles_precio[]"]:checked').map(function() {
-                        return this.value;
-                    }).get() ?? [],
-                },
-                success: function(response) {
-                    if (response.status === 'queued') {
-                        Swal.fire({
-                            title: 'Exportación en proceso',
-                            text: response.message,
-                            icon: 'info',
-                            confirmButtonText: 'Aceptar'
-                        });
-
-                    }
-                }
+                window.addEventListener('focus', function() {
+                    $('#loadingProgress').hide();
+                    $('.btnExportar').removeClass('disabled');
+                }, {
+                    once: true
+                });
             });
         });
     </script>

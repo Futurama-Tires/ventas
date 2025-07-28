@@ -10,7 +10,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Jobs\Cotizador\ExportarInventarioJob;
 use App\Exports\Cotizador\InventarioExport;
-use Maatwebsite\Excel\Excel;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\Cotizador\CotizadorExport;
 
 class CotizadorLlantasController extends Controller
 {
@@ -32,16 +33,6 @@ class CotizadorLlantasController extends Controller
 
   public function obtenerInventario(Request $request)
   {
-    /*Log::info('Obteniendo inventario con filtros', [
-      'request' => $request->all(),
-      'ancho' => $request->input('ancho', 0),
-      'alto' => $request->input('alto', 0),
-      'rin' => $request->input('rin'),
-      'marca' => $request->input('marca'),
-      'aplicaciones' => $request->input('aplicacion'),
-      'niveles_precio' => $request->input('niveles_precio', [])
-    ]);*/
-
     // 1) Parámetros de DataTables
     $ancho = (int) $request->input('ancho', 0);
     $alto = (int) $request->input('alto', 0);
@@ -443,15 +434,19 @@ class CotizadorLlantasController extends Controller
     return $row;
   }
 
-  public function exportarInventario(Request $request)
+  public function exportarInventario()
   {
-    // Crear job para procesar en background
-    ExportarInventarioJob::dispatch(auth()->user());
+    $datos  = $this->netsuite->suiteqlQueryAll($this->getBaseQuery());
 
-    return response()->json([
-      'status' => 'queued',
-      'message' => 'La exportación se está procesando en segundo plano. Se notificará cuando esté lista.'
-    ]);
+    // Consolidar
+    $rows = $this->consolidateInventory($datos);
+
+    // Aplanar para DataTables
+    $data = $rows->map(fn($i) => $this->flattenForDatatables($i))->toArray();
+
+    $nombreArchivo = 'COTIZADOR FUTURAMA TIRES ' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+    return Excel::download(new CotizadorExport($data), $nombreArchivo);
   }
 
 

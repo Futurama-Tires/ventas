@@ -51,14 +51,6 @@ class HojaGeneralExport implements WithEvents, WithTitle, WithDrawings, WithColu
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
-                // Aplicar formato numérico a las columnas de precios
-                $columns = ['H', 'I', 'J', 'K', 'L'];
-                foreach ($columns as $column) {
-                    $sheet->getStyle($column . '11:' . $column . $sheet->getHighestRow())
-                        ->getNumberFormat()
-                        ->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
-                }
-
                 $sheet->freezePane('C11');  //Bloqueamos la celda
 
                 $fecha = date("d-m-Y"); // Fecha actual
@@ -78,8 +70,8 @@ class HojaGeneralExport implements WithEvents, WithTitle, WithDrawings, WithColu
                 $sheet->setCellValue('A4', "LOS PRECIOS INCLUYEN I.V.A");
                 $sheet->setCellValue('A5', "LOS PRECIOS SE ENCUENTRAN SUJETOS A CAMBIOS SIN PREVIO AVISO");
                 $sheet->setCellValue('A6', "UNA VEZ SALIDA LA MERCANCIA NO SE ACEPTAN DEVOLUCIONES");
-                $sheet->setCellValue('A7', "Fecha");
-                $sheet->setCellValue('A8', $fecha);
+                $sheet->setCellValue('A7', "Inventario actualizado al: ");
+                $sheet->setCellValue('A8', now()->format('d-m-Y H:i'));
 
                 //Encabecado
                 $encabezado = [

@@ -53,8 +53,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('/cotizador-llantas', CotizadorLlantasController::class);
     Route::get('/obtener-cotizador', [CotizadorLlantasController::class, 'obtenerInventario'])
         ->name('cotizador.data');
-        
-    Route::post('/exportar-inventario', [CotizadorLlantasController::class, 'exportarInventario'])
+
+    Route::get('/exportar-inventario', [CotizadorLlantasController::class, 'exportarInventario'])
         ->name('exportar.inventario');
 
     Route::get('/descargar-exportacion/{archivo}', function ($archivo) {
