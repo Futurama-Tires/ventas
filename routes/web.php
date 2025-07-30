@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 use App\Livewire\Cotizador\CotizadorLlantas;
 use App\Http\Controllers\Cotizador\CotizadorLlantasController;
+use App\Http\Controllers\ODV\SalesOrdersController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('/cotizador-llantas', CotizadorLlantasController::class);
     Route::get('/obtener-cotizador', [CotizadorLlantasController::class, 'obtenerInventario'])
         ->name('cotizador.data');
+    //Ordenes de Venta
+    Route::get('/insert-order', [SalesOrdersController::class, 'insertSalesOrder'])->name('salesOrders.create');
+    Route::get('/netsuite/customers/search', [SalesOrdersController::class, 'searchCustomers']);
+    Route::get('/netsuite/locations/search', [SalesOrdersController::class, 'searchLocations']);
+    Route::get('/netsuite/items/search', [SalesOrdersController::class, 'searchItems']);
 });
 
 require __DIR__ . '/auth.php';
