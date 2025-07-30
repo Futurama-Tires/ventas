@@ -83,7 +83,7 @@ class NetsuiteService
             ];
 
             $bodyJson = json_encode($requestBody);
-            logger()->info('SuiteQL request body: ' . $bodyJson);
+            //logger()->info('SuiteQL request body: ' . $bodyJson);
 
             // Enviar parámetros de paginación como query string
             $response = $this->client->post($baseEndpoint . '?' . http_build_query($queryParams), [

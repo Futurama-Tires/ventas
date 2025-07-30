@@ -41,6 +41,9 @@ class CotizadorLlantasController extends Controller
     $marca = $request->input('marca');
     $aplicaciones = $request->input('aplicacion');
     $nivelesPrecio = $request->input('niveles_precio', []); // Cambiado a array
+    // En tu método que procesa la solicitud (antes de construir el SQL):
+    $ubicacionesFiltro = $request->input('ubicaciones', []);
+
 
     $search  = $request->input('search.value', '');
     $start   = (int) $request->input('start', 0);
@@ -58,6 +61,31 @@ class CotizadorLlantasController extends Controller
       $listaNiveles = implode(',', $nivelesEscapados);
       $condicionNivelesPrecio = " AND itemPrice.pricelevelname IN ($listaNiveles)";
     }
+
+    //Ubicaciones
+    // Si no se seleccionó ninguna ubicación, usa todas por defecto
+    if (empty($ubicacionesFiltro)) {
+      $ubicacionesFiltro = ['65', '68', '64', '67', '54', '62', '61', '53', '55', '63', '59', '75', '74', '73', '5', '8', '7', '6', '11', '1', '12', '3', '56', '57', '14', '13', '76', '9', '4', '2', '52'];
+    } else {
+      //Si selecciona OBR MAY agregar Obregon A y B
+      if (in_array(14, $ubicacionesFiltro)) {
+        array_push($ubicacionesFiltro, "56", "57");
+      }
+
+      //Si selecciona Chamilpa agrega bod tempo 25, 1, 26, 22, 17 y 5 y chamilpa local 5, 17 y 14
+      if (in_array(53, $ubicacionesFiltro)) {
+        array_push($ubicacionesFiltro, "54", "55", "61", "62", "63", "73", "74", "75");
+      }
+
+      //Si selecciona ahuatepec agrega ahuatepec 10,6 y 11 
+      if (in_array(64, $ubicacionesFiltro)) {
+        array_push($ubicacionesFiltro, "65", "67", "68");
+      }
+    }
+
+    // Construye la condición para el SQL
+    $ubicacionesLista = implode("','", $ubicacionesFiltro);
+    $condicionUbicaciones = " WHERE aggregateItemLocation.LOCATION IN ('{$ubicacionesLista}')";
 
     // Construir condición para aplicaciones
     $condicionAplicacion = '';
@@ -102,7 +130,8 @@ class CotizadorLlantasController extends Controller
       FROM aggregateItemLocation
       INNER JOIN LOCATION 
         ON aggregateItemLocation.LOCATION = LOCATION.ID
-      WHERE aggregateItemLocation.quantityavailable > 0
+        {$condicionUbicaciones}
+      AND aggregateItemLocation.quantityavailable > 0
     ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item
     LEFT JOIN CUSTOMLIST_NSO_LIST_MARCA 
       ON item.custitem_nso_marca = CUSTOMLIST_NSO_LIST_MARCA.ID
@@ -147,7 +176,8 @@ class CotizadorLlantasController extends Controller
       FROM aggregateItemLocation
       INNER JOIN LOCATION 
         ON aggregateItemLocation.LOCATION = LOCATION.ID
-      WHERE aggregateItemLocation.quantityavailable > 0
+        {$condicionUbicaciones}
+      AND aggregateItemLocation.quantityavailable > 0
     ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item
     LEFT JOIN CUSTOMLIST_NSO_LIST_MARCA 
       ON item.custitem_nso_marca = CUSTOMLIST_NSO_LIST_MARCA.ID
@@ -178,7 +208,7 @@ class CotizadorLlantasController extends Controller
     } else {
       // 4a) Detalle de esos itemid sin paginar
       $inList      = "'" . implode("','", $itemidsPage) . "'";
-      $detailSql   = $this->getBaseQuery() . " AND item.itemid IN ({$inList})";
+      $detailSql   = $this->getBaseQuery($condicionUbicaciones) . " AND item.itemid IN ({$inList})";
       $detailResp  = $this->netsuite->suiteqlQuery($detailSql);
       $rowsRaw     = $detailResp['items'] ?? [];
       // 4b) Consolidar
@@ -200,7 +230,7 @@ class CotizadorLlantasController extends Controller
   }
 
 
-  protected function getBaseQuery(): string
+  protected function getBaseQuery($condicionUbicaciones): string
   {
     return "SELECT 
       item.itemid AS itemid,
@@ -245,10 +275,8 @@ class CotizadorLlantasController extends Controller
       FROM aggregateItemLocation
       INNER JOIN LOCATION 
         ON aggregateItemLocation.LOCATION = LOCATION.ID
-      WHERE 
-        aggregateItemLocation.LOCATION IN (
-          '65','68','64','67','54','62','61','53','55','63','59','75','74','73','5','8','7','6','11','1','12','3','56','57','14','13','76','9','4','2','52'
-        )
+     
+        {$condicionUbicaciones}
         AND aggregateItemLocation.quantityavailable > 0
     ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item
     LEFT JOIN CUSTOMLIST_NSO_LIST_MARCA 
@@ -421,7 +449,7 @@ class CotizadorLlantasController extends Controller
     // Agrega precios en columnas fijas
     foreach ($niveles as $nivel) {
       $row[Str::slug($nivel, '_')]
-        = number_format($item['precios'][$nivel] ?? 0, 2);
+        = str_replace(",", "", ($item['precios'][$nivel] ?? 0));
     }
 
     // Agrega stock por ubicación en columnas fijas
@@ -436,7 +464,16 @@ class CotizadorLlantasController extends Controller
 
   public function exportarInventario()
   {
-    $datos  = $this->netsuite->suiteqlQueryAll($this->getBaseQuery());
+    // Si no se seleccionó ninguna ubicación, usa todas por defecto
+
+    $ubicacionesFiltro = ['65', '68', '64', '67', '54', '62', '61', '53', '55', '63', '59', '75', '74', '73', '5', '8', '7', '6', '11', '1', '12', '3', '56', '57', '14', '13', '76', '9', '4', '2', '52'];
+
+
+    // Construye la condición para el SQL
+    $ubicacionesLista = implode("','", $ubicacionesFiltro);
+    $condicionUbicaciones = " WHERE aggregateItemLocation.LOCATION IN ('{$ubicacionesLista}')";
+
+    $datos  = $this->netsuite->suiteqlQueryAll($this->getBaseQuery($condicionUbicaciones));
 
     // Consolidar
     $rows = $this->consolidateInventory($datos);

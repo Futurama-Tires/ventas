@@ -79,11 +79,37 @@
         {{-- Cuerpo --}}
         <div class="page-body">
             <div class="container-xl">
+
+                <div class="alert alert-success alert-dismissible" role="alert" style="display: none;"
+                    id="alertDescargaCotizador">
+                    <div class="d-flex">
+                        <div class="alert-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-download">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                                <path d="M7 11l5 5l5 -5" />
+                                <path d="M12 4l0 12" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="alert-heading">Descarga correcta</h4>
+                            <div class="alert-description">
+                                El cotizador se ha descargado correctamente. Si no se descarga, por favor
+                                <a href="{{ route('exportar.inventario') }}" class="alert-link">haz clic aquí</a> para
+                                descargarlo nuevamente.
+                            </div>
+                        </div>
+                        <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+                    </div>
+                </div>
+
                 <div class="row g-2">
 
                     <div class="card">
-                        <div class="progress progress-sm" id="loadingProgress">
-                            <div class="progress-bar progress-bar-indeterminate" style="display: none;"></div>
+                        <div class="progress progress-sm" id="loadingProgress" style="display: none;">
+                            <div class="progress-bar progress-bar-indeterminate bg-green"></div>
                         </div>
                         <div class="table-responsive px-1">
 
@@ -194,6 +220,95 @@
                         <input class="form-check-input" type="checkbox" name="niveles_precio[]" value="SEMI - MAYOREO"
                             id="semi_mayoreo">
                         <label class="form-check-label" for="semi_mayoreo">SEMI - MAYOREO</label>
+                    </div>
+                </div>
+
+                <div class="form-label">Ubicaciones</div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="1"
+                            id="matriz">
+                        <label class="form-check-label" for="matriz">MATRIZ</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="2"
+                            id="vgr">
+                        <label class="form-check-label" for="vgr">VICENTE GUERRERO</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="4"
+                            id="vallejo">
+                        <label class="form-check-label" for="vallejo">VALLEJO</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="76"
+                            id="poniente">
+                        <label class="form-check-label" for="poniente">PONIENTE</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="7"
+                            id="ixtapaluca">
+                        <label class="form-check-label" for="ixtapaluca">IXTAPALUCA</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="9"
+                            id="qro">
+                        <label class="form-check-label" for="qro">QUERÉTARO</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="8"
+                            id="gdl">
+                        <label class="form-check-label" for="gdl">GUADALAJARA</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="3"
+                            id="obr">
+                        <label class="form-check-label" for="obr">OBREGÓN</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="14"
+                            id="obrmay">
+                        <label class="form-check-label" for="obrmay">OBREGÓN MAYOREO</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="6"
+                            id="joj">
+                        <label class="form-check-label" for="joj">JOJUTLA</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="13"
+                            id="plasticos">
+                        <label class="form-check-label" for="plasticos">PLÁSTICOS</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="11"
+                            id="jor">
+                        <label class="form-check-label" for="jor">JORGES</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="12"
+                            id="misael">
+                        <label class="form-check-label" for="misael">MISAEL</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="53"
+                            id="chamilpa">
+                        <label class="form-check-label" for="chamilpa">CHAMILPA</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="64"
+                            id="ahuatepec">
+                        <label class="form-check-label" for="ahuatepec">AHUATEPEC</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="52"
+                            id="vinilos">
+                        <label class="form-check-label" for="vinilos">VINILOS</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ubicaciones[]" value="59"
+                            id="bdc">
+                        <label class="form-check-label" for="bdc">BODEGA DE CAMIÓN</label>
                     </div>
                 </div>
 
@@ -320,10 +435,12 @@
                         d.ancho = $('#ancho').val();
                         d.rin = $('#rin').val();
                         d.marca = $('#marca').val();
-                        //d.aplicacion = $('#aplicacion').val();
-                        //d.nivel_precio = $('#nivel_precio').val();
                         d.aplicacion = $('#aplicacion').val(); // Tom Select ya maneja múltiples valores
                         d.niveles_precio = $('input[name="niveles_precio[]"]:checked').map(function() {
+                            return this.value;
+                        }).get();
+
+                        d.ubicaciones = $('input[name="ubicaciones[]"]:checked').map(function() {
                             return this.value;
                         }).get();
                     },
@@ -357,7 +474,7 @@
                                 return data ? '$' + parseFloat(data).toLocaleString('es-MX', {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2
-                                }) : '$0.00';
+                                }) : 'NO SE PUEDO OBTENER';
                             }
                             return data;
                         }
@@ -411,55 +528,157 @@
                         }
                     },
                     {
-                        data: 'matriz'
+                        data: 'matriz',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'vicente_guerrero'
+                        data: 'vicente_guerrero',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'vallejo'
+                        data: 'vallejo',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'poniente'
+                        data: 'poniente',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'ixtapaluca'
+                        data: 'ixtapaluca',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'queretaro'
+                        data: 'queretaro',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'guadalajara'
+                        data: 'guadalajara',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'obregon'
+                        data: 'obregon',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'obregon_mayoreo'
+                        data: 'obregon_mayoreo',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'jojutla'
+                        data: 'jojutla',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'plasticos'
+                        data: 'plasticos',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'jorges'
+                        data: 'jorges',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'misael'
+                        data: 'misael',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'chamilpa'
+                        data: 'chamilpa',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'ahuatepec'
+                        data: 'ahuatepec',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'vinilos'
+                        data: 'vinilos',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     },
                     {
-                        data: 'bodega_de_camion'
+                        data: 'bodega_de_camion',
+                        render: function(data, type, row) {
+                            if (data > 0) {
+                                return `<span class="text-green fw-bold">${data}</span>`;
+                            }
+                            return `<span class="text-orange">${data}</span>`;
+                        }
                     }
                 ],
                 pageLength: 5,
@@ -511,6 +730,9 @@
                 // Resetear checkboxes de niveles de precio
                 $('input[name="niveles_precio[]"]').prop('checked', false);
 
+                // Resetear checkboxes de ubicaciones
+                $('input[name="ubicaciones[]"]').prop('checked', false);
+
                 // Cerrar el offcanvas
                 var offcanvasElement = document.getElementById('offcanvasStart');
                 var offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasElement);
@@ -525,6 +747,7 @@
             // Event listeners para cambios en los filtros
             $('#alto, #ancho, #rin, #aplicacion, #marca').on('change input', verificarFiltros);
             $('input[name="niveles_precio[]"]').on('change', verificarFiltros);
+            $('input[name="ubicaciones[]"]').on('change', verificarFiltros);
 
             // Verificar estado inicial al cargar la página
             $(document).ready(function() {
@@ -539,9 +762,11 @@
                 const marca = $('#marca').val();
                 const aplicacion = $('#aplicacion').val();
                 const checksMarcados = $('input[name="niveles_precio[]"]:checked').length > 0;
+                const checksUbiMarcados = $('input[name="ubicaciones[]"]:checked').length > 0;
 
                 // Verificar si algún filtro tiene valor
-                const hayFiltros = alto || ancho || rin || marca || aplicacion || checksMarcados;
+                const hayFiltros = alto || ancho || rin || marca || aplicacion || checksMarcados ||
+                    checksUbiMarcados;
 
                 // Habilitar/deshabilitar botones
                 $('#btnBuscar').prop('disabled', !hayFiltros);
@@ -561,9 +786,12 @@
                 $('#loadingProgress').show();
                 $('.btnExportar').addClass('disabled');
 
+                $('#alertDescargaCotizador').hide();
                 window.addEventListener('focus', function() {
                     $('#loadingProgress').hide();
                     $('.btnExportar').removeClass('disabled');
+
+                    $('#alertDescargaCotizador').show();
                 }, {
                     once: true
                 });
