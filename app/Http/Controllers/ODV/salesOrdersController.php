@@ -75,10 +75,11 @@ class SalesOrdersController extends Controller
     {
         $term = strtoupper($request->input('q')); // TomSelect uses 'q' by default
         $location = $request->input('location');
+
         if (!$term || strlen($term) < 3) {
             return response()->json([]);
         }
-
+        //custitem_clave_prod_serv
         //Obtiene todas las llantas
         $sql = "SELECT id, itemid FROM item
             WHERE itemid LIKE '%" . addslashes($term) . "%' 
@@ -98,48 +99,53 @@ class SalesOrdersController extends Controller
             $rows = collect();
         } else {
             //Obtener stocks y datos de las llantas solo que se buscan
-            /*$stockLocation = "SELECT 
-            item.itemid AS itemid, 
-            aggregateItemLocation_SUB.quantityavailable AS disponible FROM item
-           INNER JOIN (
-            SELECT 
-                aggregateItemLocation.item,
-                LOCATION.fullname,
-                aggregateItemLocation.quantityavailable,
-                aggregateItemLocation.quantityonhand
-            FROM aggregateItemLocation
-            INNER JOIN LOCATION 
-                ON aggregateItemLocation.LOCATION = LOCATION.ID
-                WHERE 
-                aggregateItemLocation.LOCATION IN (
-                '{$location}'
-                )
-                AND aggregateItemLocation.quantityavailable > 0
-            ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item AND item.itemid IN ({$inList})";
-
-            $stocks = $this->netsuite->suiteqlQuery($stockLocation);*/
 
             $ubicacionesFiltro = ['65', '68', '64', '67', '54', '62', '61', '53', '55', '63', '59', '75', '74', '73', '5', '8', '7', '6', '11', '1', '12', '3', '56', '57', '14', '13', '76', '9', '4', '2', '52'];
             $ubicacionesStr = "'" . implode("','", $ubicacionesFiltro) . "'";
 
             $stockQuery = "SELECT 
-                                item.itemid AS itemid,
-                                COALESCE((
-                                    SELECT SUM(ail.quantityavailable)
-                                    FROM aggregateItemLocation ail
-                                    WHERE ail.item = item.id
-                                    AND ail.LOCATION = '{$location}'
-                                    AND ail.quantityavailable > 0
-                                ), 0) AS stock_seleccionada,
-                                COALESCE((
-                                    SELECT SUM(ail.quantityavailable)
-                                    FROM aggregateItemLocation ail
-                                    WHERE ail.item = item.id
-                                    AND ail.LOCATION IN ({$ubicacionesStr})
-                                    AND ail.quantityavailable > 0
-                                ), 0) AS stock_general
-                            FROM item
-                            WHERE item.itemid IN ({$inList})";
+                item.itemid AS itemid,
+                item.custitem_clave_prod_serv AS clave_prod_servicio,
+                itemPrice_SUB.pricelevelname AS pricelevelname,
+                itemPrice_SUB.price AS price,
+                item.description AS descripcion,
+                unitsTypeUom.abbreviation AS abbreviation,
+                COALESCE((
+                    SELECT SUM(ail.quantityavailable)
+                    FROM aggregateItemLocation ail
+                    WHERE ail.item = item.id
+                    AND ail.LOCATION = '{$location}'
+                    AND ail.quantityavailable > 0
+                ), 0) AS stock_seleccionada,
+                COALESCE((
+                    SELECT SUM(ail.quantityavailable)
+                    FROM aggregateItemLocation ail
+                    WHERE ail.item = item.id
+                    AND ail.LOCATION IN ({$ubicacionesStr})
+                    AND ail.quantityavailable > 0
+                ), 0) AS stock_general
+            FROM item
+            INNER JOIN (
+      SELECT 
+        itemPrice.item,
+        itemPrice.price,
+        itemPrice.pricelevelname
+      FROM itemPrice
+      INNER JOIN currency ON itemPrice.currencypage = currency.id
+      WHERE 
+        currency.name = 'MEX'
+        AND itemPrice.pricelevelname IN (
+          'SEMI - MAYOREO', 
+          'MAYOREO', 
+          'PROMOCION DEL MES', 
+          'NK', 
+          'PROMOCION POR PRONTO PAGO'
+        )
+    ) itemPrice_SUB ON item.id = itemPrice_SUB.item
+            LEFT JOIN unitsType ON item.unitstype = unitsType.ID
+            LEFT JOIN unitsTypeUom ON unitsType.ID = unitsTypeUom.unitstype
+            WHERE item.itemid IN ({$inList})";
+
             $stocks = $this->netsuite->suiteqlQuery($stockQuery);
             Log::info($stocks);
         }
