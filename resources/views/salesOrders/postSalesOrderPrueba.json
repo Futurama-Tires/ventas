@@ -42,7 +42,7 @@
         "id": "8", //YA LO TENEMOS
         "refName": "GUADALAJARA"
     },
-    //LO PODEMOS MANDAR SIN TEMA
+    //LO PODEMOS MANDAR SIN TEMA CHECAR SI ES OLBIGATORIA
     "custbody_nso_direccion_ubicacion": "GUADALAJARA\r\nAnastasio Bustamante No. 76-2\r\nCol. Francisco Sarabia\r\nZapopan\r\nZapopan JAL 45236\r\nMéxico",
     "custbody_cfdi_formadepago": {
         "links": [
@@ -65,7 +65,8 @@
         "refName": "S01-Sin efectos fiscales"
     },
 
-    //ESTE REALMENTE ES EL PEDO
+    //ESTE REALMENTE ES EL PEDO HAY QUE HACER PRUEBAS CON MANDAS
+    //PRUEBAS DE NIVELES DE PRECIO
     "item": {
         "items": [
             {

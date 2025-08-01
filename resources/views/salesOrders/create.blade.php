@@ -381,11 +381,11 @@
             const itemInputId = `locations-${rowCount}`;
 
             newRow.innerHTML = `
-                                <td><span class="text-secondary">${rowCount}</span></td>
-                                <td><input id="${itemInputId}" name="item_id[]" placeholder="Buscar Articulo..." class="form-control"></td>
-                                <td><input type="number" name="cantidad[]" class="form-control" placeholder="Enter email"></td>
-                                <td><button type="button" class="btn btn-outline-danger" onclick="removeRow(this)">Eliminar</button></td>
-                                                                                                                                                                                                                                                `;
+                                    <td><span class="text-secondary">${rowCount}</span></td>
+                                    <td><input id="${itemInputId}" name="item_id[]" placeholder="Buscar Articulo..." class="form-control"></td>
+                                    <td><input type="number" name="cantidad[]" class="form-control" placeholder="Enter email"></td>
+                                    <td><button type="button" class="btn btn-outline-danger" onclick="removeRow(this)">Eliminar</button></td>
+                                                                                                                                                                                                                                                    `;
 
             // Initialize TomSelect for this new input
             new TomSelect(`#${itemInputId}`, {

@@ -56,7 +56,7 @@ class SalesOrdersController extends Controller
                 Customer
                 LEFT JOIN 
                 employee ON Customer.salesrep = employee.ID
-                WHERE 
+                WHERE
                 employee.subsidiary IN ('3') 
                 AND Customer.altname IS NOT NULL
                 AND Customer.altname LIKE '%" . addslashes($term) . "%'
@@ -97,7 +97,7 @@ class SalesOrdersController extends Controller
         $results = $this->netsuite->suiteqlQuery($sql);
 
         $itemidsPage = array_column($results['items'] ?? [], 'itemid');
-        $inList      = "'" . implode("','", $itemidsPage) . "'";
+        $inList = "'" . implode("','", $itemidsPage) . "'";
 
 
         $ubicacionesFiltro = ['65', '68', '64', '67', '54', '62', '61', '53', '55', '63', '59', '75', '74', '73', '5', '8', '7', '6', '11', '1', '12', '3', '56', '57', '14', '13', '76', '9', '4', '2', '52'];
@@ -237,5 +237,7 @@ class SalesOrdersController extends Controller
     // }
 
 
-    private function queryClientes() {}
+    private function queryClientes()
+    {
+    }
 }
