@@ -37,16 +37,30 @@ class SalesOrdersController extends Controller
 
     public function searchCustomers(Request $request)
     {
-        $term = $request->input('q'); // TomSelect uses 'q' by default
+        $term = strtoupper($request->input('q')); // TomSelect uses 'q' by default
 
         if (!$term || strlen($term) < 12) {
             return response()->json([]);
         }
 
-        $sql = "SELECT id, entityid, custentity_rfc, isperson 
+        /*$sql = "SELECT id, entityid, custentity_rfc, isperson 
             FROM customer 
             WHERE entityid LIKE '%" . addslashes($term) . "%' 
-            ORDER BY entityid";
+            ORDER BY entityid";*/
+
+        $sql = "SELECT 
+                Customer.ID AS id, 
+                Customer.altname AS entityid,
+                Customer.custentity_rfc AS custentity_rfc
+                FROM 
+                Customer
+                LEFT JOIN 
+                employee ON Customer.salesrep = employee.ID
+                WHERE 
+                employee.subsidiary IN ('3') 
+                AND Customer.altname IS NOT NULL
+                AND Customer.altname LIKE '%" . addslashes($term) . "%'
+                 ORDER BY Customer.altname";
 
         $results = $this->netsuite->suiteqlQuery($sql);
 
@@ -55,7 +69,7 @@ class SalesOrdersController extends Controller
             ->map(function ($item) {
                 return [
                     'value' => $item['id'],
-                    'text' => $item['entityid'],
+                    'text' => $item['entityid'], //Nombre del cliente
                     'rfc' => $item['custentity_rfc'],
                 ];
             });
@@ -67,17 +81,78 @@ class SalesOrdersController extends Controller
 
     public function searchItems(Request $request)
     {
-        $term = $request->input('q'); // TomSelect uses 'q' by default
-
-        if (!$term || strlen($term) < 2) {
+        Log::info($request->all());
+        $term = strtoupper($request->input('q')); // TomSelect uses 'q' by default
+        $location = $request->input('location');
+        if (!$term || strlen($term) < 3) {
             return response()->json([]);
         }
 
+        //Obtiene todas las llantas
         $sql = "SELECT id, itemid FROM item
             WHERE itemid LIKE '%" . addslashes($term) . "%' 
+            AND class = 1
             ORDER BY itemid";
 
         $results = $this->netsuite->suiteqlQuery($sql);
+
+        $itemidsPage = array_column($results['items'] ?? [], 'itemid');
+        $inList      = "'" . implode("','", $itemidsPage) . "'";
+
+
+        $ubicacionesFiltro = ['65', '68', '64', '67', '54', '62', '61', '53', '55', '63', '59', '75', '74', '73', '5', '8', '7', '6', '11', '1', '12', '3', '56', '57', '14', '13', '76', '9', '4', '2', '52'];
+        $ubicacionesStr = "'" . implode("','", $ubicacionesFiltro) . "'";
+
+        if (empty($itemidsPage)) {
+            $rows = collect();
+        } else {
+            //Obtener stocks y datos de las llantas solo que se buscan
+            /*$stockLocation = "SELECT 
+            item.itemid AS itemid, 
+            aggregateItemLocation_SUB.quantityavailable AS disponible FROM item
+           INNER JOIN (
+            SELECT 
+                aggregateItemLocation.item,
+                LOCATION.fullname,
+                aggregateItemLocation.quantityavailable,
+                aggregateItemLocation.quantityonhand
+            FROM aggregateItemLocation
+            INNER JOIN LOCATION 
+                ON aggregateItemLocation.LOCATION = LOCATION.ID
+                WHERE 
+                aggregateItemLocation.LOCATION IN (
+                '{$location}'
+                )
+                AND aggregateItemLocation.quantityavailable > 0
+            ) aggregateItemLocation_SUB ON item.ID = aggregateItemLocation_SUB.item AND item.itemid IN ({$inList})";
+
+            $stocks = $this->netsuite->suiteqlQuery($stockLocation);*/
+
+            $ubicacionesFiltro = ['65', '68', '64', '67', '54', '62', '61', '53', '55', '63', '59', '75', '74', '73', '5', '8', '7', '6', '11', '1', '12', '3', '56', '57', '14', '13', '76', '9', '4', '2', '52'];
+            $ubicacionesStr = "'" . implode("','", $ubicacionesFiltro) . "'";
+
+            $stockQuery = "SELECT 
+                                item.itemid AS itemid,
+                                COALESCE((
+                                    SELECT SUM(ail.quantityavailable)
+                                    FROM aggregateItemLocation ail
+                                    WHERE ail.item = item.id
+                                    AND ail.LOCATION = '{$location}'
+                                    AND ail.quantityavailable > 0
+                                ), 0) AS stock_seleccionada,
+                                COALESCE((
+                                    SELECT SUM(ail.quantityavailable)
+                                    FROM aggregateItemLocation ail
+                                    WHERE ail.item = item.id
+                                    AND ail.LOCATION IN ({$ubicacionesStr})
+                                    AND ail.quantityavailable > 0
+                                ), 0) AS stock_general
+                            FROM item
+                            WHERE item.itemid IN ({$inList})";
+            $stocks = $this->netsuite->suiteqlQuery($stockQuery);
+            Log::info($stocks);
+        }
+
 
         $items = collect($results['items'] ?? [])
             ->take(20) // Limita aquí
@@ -98,7 +173,7 @@ class SalesOrdersController extends Controller
 
     public function searchLocations(Request $request)
     {
-        $term = $request->input('q'); // TomSelect uses 'q' by default
+        $term = strtoupper($request->input('q')); // TomSelect uses 'q' by default
 
         if (!$term || strlen($term) < 2) {
             return response()->json([]);
@@ -106,6 +181,7 @@ class SalesOrdersController extends Controller
 
         $sql = "SELECT id, name FROM location
             WHERE name LIKE '%" . addslashes($term) . "%' 
+            AND id IN('1', '2', '3', '4', '6', '7', '8', '9', '76')
             ORDER BY name";
 
         $results = $this->netsuite->suiteqlQuery($sql);
@@ -161,8 +237,5 @@ class SalesOrdersController extends Controller
     // }
 
 
-    private function queryClientes()
-    {
-
-    }
+    private function queryClientes() {}
 }
