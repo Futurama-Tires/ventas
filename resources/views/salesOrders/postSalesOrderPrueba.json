@@ -1,0 +1,78 @@
+{
+    "companyName": "Company prueba suiteTalk", //ESTE CAMPO REALMENTE PUES ES EL NOMBRE DE LA COMPAÑIA
+
+    "tranDate": "2025-07-21", //YA LO TENEMOS
+    "entity": {
+        "links": [
+            {
+                "rel": "self",
+                "href": "https://4672042-sb1.suitetalk.api.netsuite.com/services/rest/record/v1/customer/3781"
+            }
+        ],
+        "id": "3781", //YA LO TENEMOS
+        "refName": "CFE DISTRIBUCION" //NO ES NECESARIO PERO YA LO OBTENEMOS EN BASE AL ID
+    },
+    "subsidiary": {
+        "links": [
+            {
+                "rel": "self",
+                "href": "https://4672042-sb1.suitetalk.api.netsuite.com/services/rest/record/v1/subsidiary/3"
+            }
+        ],
+        "id": "3", //YA LO TENEMOS
+        "refName": "Centro Automotriz Futurama S.A. de C.V."
+    },
+    "class": {
+        "links": [
+            {
+                "rel": "self",
+                "href": "https://4672042-sb1.suitetalk.api.netsuite.com/services/rest/record/v1/classification/1"
+            }
+        ],
+        "id": "1", //ES DIRECTO  YA LO TENEMOS
+        "refName": "LLANTAS"
+    },
+    "location": {
+        "links": [
+            {
+                "rel": "self",
+                "href": "https://4672042-sb1.suitetalk.api.netsuite.com/services/rest/record/v1/location/8"
+            }
+        ],
+        "id": "8", //YA LO TENEMOS
+        "refName": "GUADALAJARA"
+    },
+    //LO PODEMOS MANDAR SIN TEMA
+    "custbody_nso_direccion_ubicacion": "GUADALAJARA\r\nAnastasio Bustamante No. 76-2\r\nCol. Francisco Sarabia\r\nZapopan\r\nZapopan JAL 45236\r\nMéxico",
+    "custbody_cfdi_formadepago": {
+        "links": [
+            {
+                "rel": "self",
+                "href": "https://4672042-sb1.suitetalk.api.netsuite.com/services/rest/record/v1/customlist_cfdi_formapago/1"
+            }
+        ],
+        "id": "1", //YA LO TENEMOS
+        "refName": "PUE-PAGO EN UNA SOLA EXHIBICION"
+    },
+    "custbody_uso_cfdi": {
+        "links": [
+            {
+                "rel": "self",
+                "href": "https://4672042-sb1.suitetalk.api.netsuite.com/services/rest/record/v1/customlist_cfdi_uso/23"
+            }
+        ],
+        "id": "23", //YA LO TENEMOS
+        "refName": "S01-Sin efectos fiscales"
+    },
+
+    //ESTE REALMENTE ES EL PEDO
+    "item": {
+        "items": [
+            {
+                "item": { "id": "19660" },
+                "quantity": 1,
+                "price": { "id": "1" }
+            }
+        ]
+    }
+}

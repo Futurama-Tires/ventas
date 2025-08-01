@@ -55,10 +55,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/obtener-cotizador', [CotizadorLlantasController::class, 'obtenerInventario'])
         ->name('cotizador.data');
     //Ordenes de Venta
-    Route::get('/insert-order', [SalesOrdersController::class, 'insertSalesOrder'])->name('salesOrders.create');
+    Route::get('/create-salesorder', [SalesOrdersController::class, 'create'])->name('salesOrder.create');
+    Route::post('/store-salesorder', [SalesOrdersController::class, 'store'])->name('salesOrder.store');
     Route::get('/netsuite/customers/search', [SalesOrdersController::class, 'searchCustomers']);
     Route::get('/netsuite/locations/search', [SalesOrdersController::class, 'searchLocations']);
     Route::get('/netsuite/items/search', [SalesOrdersController::class, 'searchItems']);
+    Route::get('/netsuite/formasdepago/search', [SalesOrdersController::class, 'searchFormasDePago']);
 
     Route::get('/exportar-inventario', [CotizadorLlantasController::class, 'exportarInventario'])
         ->name('exportar.inventario');

@@ -21,7 +21,7 @@ class SalesOrdersController extends Controller
         return view('salesOrders.index');
     }
 
-    public function insertSalesOrder()
+    public function create()
     {
         // $countSql = "SELECT id, entityid, email, isperson FROM customer WHERE entityid LIKE '%JUAN%'";
 
@@ -30,12 +30,16 @@ class SalesOrdersController extends Controller
 
         return view('salesOrders.create');
     }
+    public function store(Request $request)
+    {
+        dd($request->all());
+    }
 
     public function searchCustomers(Request $request)
     {
         $term = $request->input('q'); // TomSelect uses 'q' by default
 
-        if (!$term || strlen($term) < 2) {
+        if (!$term || strlen($term) < 12) {
             return response()->json([]);
         }
 
@@ -119,6 +123,42 @@ class SalesOrdersController extends Controller
 
         return response()->json($locations);
     }
+
+    // public function searchFormasDePago(Request $request)
+    // {
+    //     $term = $request->input('q'); // TomSelect uses 'q' by default
+
+    //     if (!$term || strlen($term) < 2) {
+    //         return response()->json([]);
+    //     }
+
+    //     // $sql = "SELECT id, name FROM location
+    //     //     WHERE name LIKE '%" . addslashes($term) . "%' 
+    //     //     ORDER BY name";
+
+
+    //     $sql = "
+    //         SELECT DISTINCT custbody_cfdi_formadepago, BUILTIN.DF(custbody_cfdi_formadepago) AS formadepago_name
+    //         FROM transaction
+    //         WHERE type = 'SalesOrd'
+    //         AND BUILTIN.DF(custbody_cfdi_formadepago) LIKE '%" . addslashes($term) . "%'
+    //         ";
+
+    //     $results = $this->netsuite->suiteqlQuery($sql);
+
+    //     $locations = collect($results['items'] ?? [])
+    //         ->take(20) // Limita aquí
+    //         ->map(function ($item) {
+    //             return [
+    //                 'id' => $item['custbody_cfdi_formadepago'],
+    //                 'name' => $item['formadepago_name'],
+    //             ];
+    //         });
+
+    //     Log::info('Ubicaciones encontradas:', $locations->toArray());
+
+    //     return response()->json($locations);
+    // }
 
 
     private function queryClientes()
