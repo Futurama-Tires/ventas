@@ -37,35 +37,27 @@ class SalesOrdersController extends Controller
 
     public function searchCustomers(Request $request)
     {
-        $term = strtoupper($request->input('q')); // TomSelect uses 'q' by default
+        $term = strtoupper(trim($request->input('q'))); // TomSelect uses 'q' by default
 
-        if (!$term || strlen($term) < 12) {
+        if (!$term || strlen($term) < 3) {
             return response()->json([]);
         }
 
-        /*$sql = "SELECT id, entityid, custentity_rfc, isperson 
-            FROM customer 
-            WHERE entityid LIKE '%" . addslashes($term) . "%' 
-            ORDER BY entityid";*/
-
         $sql = "SELECT 
-                Customer.ID AS id, 
-                Customer.altname AS entityid,
-                Customer.custentity_rfc AS custentity_rfc
-                FROM 
-                Customer
-                LEFT JOIN 
-                employee ON Customer.salesrep = employee.ID
-                WHERE
-                employee.subsidiary IN ('3') 
-                AND Customer.altname IS NOT NULL
-                AND Customer.altname LIKE '%" . addslashes($term) . "%'
-                 ORDER BY Customer.altname";
+                DISTINCT BUILTIN.DF(Customer.altname) AS entityid, 
+                Customer.custentity_rfc AS custentity_rfc, 
+                Customer.ID AS id 
+                FROM Customer LEFT JOIN employee ON Customer.salesrep = employee.ID 
+                WHERE employee.subsidiary IN ('3') 
+                AND Customer.altname IS NOT NULL 
+                AND Customer.custentitycodigo_cliente IS NOT NULL 
+                AND Customer.custentity_rfc IS NOT NULL 
+                AND Customer.altname LIKE '%" . addslashes($term) . "%' ORDER BY altname ASC";
 
         $results = $this->netsuite->suiteqlQuery($sql);
 
         $customers = collect($results['items'] ?? [])
-            ->take(20) // Limita aquí
+            ->take(30) // Limita aquí
             ->map(function ($item) {
                 return [
                     'value' => $item['id'],
@@ -81,7 +73,6 @@ class SalesOrdersController extends Controller
 
     public function searchItems(Request $request)
     {
-        Log::info($request->all());
         $term = strtoupper($request->input('q')); // TomSelect uses 'q' by default
         $location = $request->input('location');
         if (!$term || strlen($term) < 3) {
