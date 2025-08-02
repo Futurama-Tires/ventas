@@ -6,7 +6,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Log;
 
-class NetsuiteService
+class NetsuiteServiceSandbox
 {
     private Client $client;
     private string $account;

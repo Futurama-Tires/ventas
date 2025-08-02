@@ -24,8 +24,8 @@ class NetsuiteService
         $this->tokenSecret = env('NETSUITE_TOKEN_SECRET');
 
         $this->client = new Client([
-            //'base_uri' => "https://{$this->account}.suitetalk.api.netsuite.com",
-            'base_uri' => "https://4672042-sb1.suitetalk.api.netsuite.com",
+            'base_uri' => "https://{$this->account}.suitetalk.api.netsuite.com",
+            //'base_uri' => "https://4672042-sb1.suitetalk.api.netsuite.com",
             // El header se pone petición por petición para firmarlo dinámicamente
         ]);
     }
@@ -49,8 +49,8 @@ class NetsuiteService
             'offset' => $offset
         ];
 
-        //$url = "https://{$this->account}.suitetalk.api.netsuite.com{$baseEndpoint}";
-        $url = "https://4672042-sb1.suitetalk.api.netsuite.com{$baseEndpoint}";
+        $url = "https://{$this->account}.suitetalk.api.netsuite.com{$baseEndpoint}";
+        //$url = "https://4672042-sb1.suitetalk.api.netsuite.com{$baseEndpoint}";
 
         $oauth = [
             'oauth_consumer_key' => $this->consumerKey,
@@ -143,7 +143,7 @@ class NetsuiteService
     public function createSalesOrder(array $data): array
     {
         $endpoint = "/services/rest/record/v1/salesOrder";
-        //$url = "https://{$this->account}.suitetalk.api.netsuite.com{$endpoint}";
+        $url = "https://{$this->account}.suitetalk.api.netsuite.com{$endpoint}";
         //4672042_SB1
 
         $url = "https://{4672042-SB1}.suitetalk.api.netsuite.com{$endpoint}";
