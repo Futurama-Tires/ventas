@@ -45,11 +45,11 @@ class CotizadorLlantasController extends Controller
     $ubicacionesFiltro = $request->input('ubicaciones', []);
 
 
-    $search  = $request->input('search.value', '');
-    $start   = (int) $request->input('start', 0);
-    $length  = (int) $request->input('length', 50);
-    $order   = $request->input('order.0', ['column' => 0, 'dir' => 'asc']);
-    $dir     = strtoupper($order['dir']) === 'DESC' ? 'DESC' : 'ASC';
+    $search = $request->input('search.value', '');
+    $start = (int) $request->input('start', 0);
+    $length = (int) $request->input('length', 50);
+    $order = $request->input('order.0', ['column' => 0, 'dir' => 'asc']);
+    $dir = strtoupper($order['dir']) === 'DESC' ? 'DESC' : 'ASC';
 
     $condicionNivelesPrecio = '';
     if (!empty($nivelesPrecio)) {
@@ -152,7 +152,7 @@ class CotizadorLlantasController extends Controller
 
     //Log::info('SQL de conteo de itemid distintos:', ['sql' => $countSql]);
 
-    $countResp    = $this->netsuite->suiteqlQuery($countSql);
+    $countResp = $this->netsuite->suiteqlQuery($countSql);
     $totalDistinct = intval($countResp['items'][0]['total'] ?? 0);
 
     // 3) Obtener los itemid de la página actual
@@ -200,17 +200,17 @@ class CotizadorLlantasController extends Controller
     //log::info('SQL de itemid distintos:', ['sql' => $distinctSql]);
 
     $distinctResp = $this->netsuite->suiteqlQuery($distinctSql, $length, $start);
-    $itemidsPage  = array_column($distinctResp['items'] ?? [], 'itemid');
+    $itemidsPage = array_column($distinctResp['items'] ?? [], 'itemid');
 
     // 4) Si no hay itemid, devolvemos vacío
     if (empty($itemidsPage)) {
       $rows = collect();
     } else {
       // 4a) Detalle de esos itemid sin paginar
-      $inList      = "'" . implode("','", $itemidsPage) . "'";
-      $detailSql   = $this->getBaseQuery($condicionUbicaciones) . " AND item.itemid IN ({$inList})";
-      $detailResp  = $this->netsuite->suiteqlQuery($detailSql);
-      $rowsRaw     = $detailResp['items'] ?? [];
+      $inList = "'" . implode("','", $itemidsPage) . "'";
+      $detailSql = $this->getBaseQuery($condicionUbicaciones) . " AND item.itemid IN ({$inList})";
+      $detailResp = $this->netsuite->suiteqlQuery($detailSql);
+      $rowsRaw = $detailResp['items'] ?? [];
       // 4b) Consolidar
       $rows = $this->consolidateInventory($rowsRaw);
     }
@@ -222,10 +222,10 @@ class CotizadorLlantasController extends Controller
 
     // 6) Respuesta JSON
     return response()->json([
-      'draw'            => (int) $request->input('draw'),
-      'recordsTotal'    => $totalDistinct,
+      'draw' => (int) $request->input('draw'),
+      'recordsTotal' => $totalDistinct,
       'recordsFiltered' => $totalDistinct,
-      'data'            => $data,
+      'data' => $data,
     ]);
   }
 
@@ -350,20 +350,20 @@ class CotizadorLlantasController extends Controller
         }
 
         return [
-          'itemid'              => $group[0]['itemid'] ?? "",
-          'descripcion'         => $group[0]['descripcion'] ?? "",
-          'aplicacion'          => $group[0]['aplicacion'] ?? "",
-          'oe'                  => $group[0]['oe'] ?? "",
-          'medida_equivalente'  => $group[0]['medida_equivalente'] ?? "",
-          'marca'               => $group[0]['marca'] ?? "",
-          'promocion'           => $group[0]['promocion'] ?? "",
-          'precios'             => $group
+          'itemid' => $group[0]['itemid'] ?? "",
+          'descripcion' => $group[0]['descripcion'] ?? "",
+          'aplicacion' => $group[0]['aplicacion'] ?? "",
+          'oe' => $group[0]['oe'] ?? "",
+          'medida_equivalente' => $group[0]['medida_equivalente'] ?? "",
+          'marca' => $group[0]['marca'] ?? "",
+          'promocion' => $group[0]['promocion'] ?? "",
+          'precios' => $group
             ->whereNotNull('pricelevelname')
             ->unique('pricelevelname')
             ->map(fn($i) => [$i['pricelevelname'] => $i['price']])
             ->collapse(),
-          'ubicaciones'         => collect($ubicacionesConsolidadas),
-          'ubicaciones_reales'  => $ubicacionesReales,
+          'ubicaciones' => collect($ubicacionesConsolidadas),
+          'ubicaciones_reales' => $ubicacionesReales,
         ];
       })->values();
 
@@ -437,13 +437,13 @@ class CotizadorLlantasController extends Controller
     ];
 
     $row = [
-      'itemid'             => $item['itemid'],
-      'descripcion'        => $item['descripcion'],
-      'aplicacion'         => $item['aplicacion'],
-      'oe'                 => $item['oe'],
+      'itemid' => $item['itemid'],
+      'descripcion' => $item['descripcion'],
+      'aplicacion' => $item['aplicacion'],
+      'oe' => $item['oe'],
       'medida_equivalente' => $item['medida_equivalente'],
-      'marca'              => $item['marca'],
-      'promocion'          => $item['promocion'],
+      'marca' => $item['marca'],
+      'promocion' => $item['promocion'],
     ];
 
     // Agrega precios en columnas fijas
@@ -473,7 +473,7 @@ class CotizadorLlantasController extends Controller
     $ubicacionesLista = implode("','", $ubicacionesFiltro);
     $condicionUbicaciones = " WHERE aggregateItemLocation.LOCATION IN ('{$ubicacionesLista}')";
 
-    $datos  = $this->netsuite->suiteqlQueryAll($this->getBaseQuery($condicionUbicaciones));
+    $datos = $this->netsuite->suiteqlQueryAll($this->getBaseQuery($condicionUbicaciones));
 
     // Consolidar
     $rows = $this->consolidateInventory($datos);
