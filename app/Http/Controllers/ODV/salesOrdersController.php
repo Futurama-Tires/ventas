@@ -104,47 +104,47 @@ class SalesOrdersController extends Controller
             $ubicacionesStr = "'" . implode("','", $ubicacionesFiltro) . "'";
 
             $stockQuery = "SELECT 
-                item.itemid AS itemid,
-                item.custitem_clave_prod_serv AS clave_prod_servicio,
-                itemPrice_SUB.pricelevelname AS pricelevelname,
-                itemPrice_SUB.price AS price,
-                item.description AS descripcion,
-                unitsTypeUom.abbreviation AS abbreviation,
-                COALESCE((
-                    SELECT SUM(ail.quantityavailable)
-                    FROM aggregateItemLocation ail
-                    WHERE ail.item = item.id
-                    AND ail.LOCATION = '{$location}'
-                    AND ail.quantityavailable > 0
-                ), 0) AS stock_seleccionada,
-                COALESCE((
-                    SELECT SUM(ail.quantityavailable)
-                    FROM aggregateItemLocation ail
-                    WHERE ail.item = item.id
-                    AND ail.LOCATION IN ({$ubicacionesStr})
-                    AND ail.quantityavailable > 0
-                ), 0) AS stock_general
-            FROM item
-            INNER JOIN (
-      SELECT 
-        itemPrice.item,
-        itemPrice.price,
-        itemPrice.pricelevelname
-      FROM itemPrice
-      INNER JOIN currency ON itemPrice.currencypage = currency.id
-      WHERE 
-        currency.name = 'MEX'
-        AND itemPrice.pricelevelname IN (
-          'SEMI - MAYOREO', 
-          'MAYOREO', 
-          'PROMOCION DEL MES', 
-          'NK', 
-          'PROMOCION POR PRONTO PAGO'
-        )
-    ) itemPrice_SUB ON item.id = itemPrice_SUB.item
-            LEFT JOIN unitsType ON item.unitstype = unitsType.ID
-            LEFT JOIN unitsTypeUom ON unitsType.ID = unitsTypeUom.unitstype
-            WHERE item.itemid IN ({$inList})";
+    item.itemid AS itemid,
+    item.custitem_clave_prod_serv AS clave_prod_servicio,
+    item.description AS descripcion,
+    unitsTypeUom.abbreviation AS abbreviation,
+    COALESCE((
+        SELECT SUM(ail.quantityavailable)
+        FROM aggregateItemLocation ail
+        WHERE ail.item = item.id
+        AND ail.LOCATION = '{$location}'
+        AND ail.quantityavailable > 0
+    ), 0) AS stock_seleccionada,
+    COALESCE((
+        SELECT SUM(ail.quantityavailable)
+        FROM aggregateItemLocation ail
+        WHERE ail.item = item.id
+        AND ail.LOCATION IN ({$ubicacionesStr})
+        AND ail.quantityavailable > 0
+    ), 0) AS stock_general,
+    LISTAGG(
+        BUILTIN.DF(itemPrice.pricelevelname) || ':' || itemPrice.price, 
+        ','
+    ) WITHIN GROUP (ORDER BY itemPrice.pricelevelname) AS precios
+FROM item
+LEFT JOIN itemPrice ON item.id = itemPrice.item
+LEFT JOIN currency ON itemPrice.currencypage = currency.id
+LEFT JOIN unitsType ON item.unitstype = unitsType.ID
+LEFT JOIN unitsTypeUom ON unitsType.ID = unitsTypeUom.unitstype
+WHERE item.itemid IN ({$inList})
+AND currency.name = 'MEX'
+AND itemPrice.pricelevelname IN (
+    'SEMI - MAYOREO', 
+    'MAYOREO', 
+    'PROMOCION DEL MES', 
+    'NK', 
+    'PROMOCION POR PRONTO PAGO'
+)
+GROUP BY 
+    item.itemid,
+    item.custitem_clave_prod_serv,
+    item.description,
+    unitsTypeUom.abbreviation";
 
             $stocks = $this->netsuite->suiteqlQuery($stockQuery);
             Log::info($stocks);
