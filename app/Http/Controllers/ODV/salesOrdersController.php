@@ -4,22 +4,22 @@ namespace App\Http\Controllers\ODV;
 
 use App\Http\Controllers\Controller;
 use App\Services\Netsuite\NetsuiteService;
+use App\Services\Netsuite\NetsuiteServiceSandbox;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Services\Netsuite\NetsuiteServiceSandBox;
 
 class SalesOrdersController extends Controller
 {
-    /*protected NetsuiteService $netsuite;
+    // protected NetsuiteService $netsuite;
 
-    public function __construct(NetsuiteService $netsuite)
-    {
-        $this->netsuite = $netsuite;
-    }*/
+    // public function __construct(NetsuiteService $netsuite)
+    // {
+    //     $this->netsuite = $netsuite;
+    // }
 
-    protected NetsuiteServiceSandBox $netsuite;
+    protected NetsuiteServiceSandbox $netsuite;
 
-    public function __construct(NetsuiteServiceSandBox $netsuite)
+    public function __construct(NetsuiteServiceSandbox $netsuite)
     {
         $this->netsuite = $netsuite;
     }
