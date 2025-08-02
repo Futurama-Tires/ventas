@@ -28,11 +28,11 @@
                         <span>Cotizador</span>
                     </a>
                 </li>
-                {{-- <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <span>Item 3</span>
+                <li class="nav-item {{ request()->routeIs('salesOrder.*') ? 'active' : '' }}">
+                    <a href="{{ route('salesOrder.create') }}" class="nav-link">
+                        <span>Órdenes de venta</span>
                     </a>
-                </li>  --}}
+                </li>
             </ul>
 
 

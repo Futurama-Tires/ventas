@@ -6,12 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Services\Netsuite\NetsuiteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Services\Netsuite\NetsuiteServiceSandBox;
 
 class SalesOrdersController extends Controller
 {
-    protected NetsuiteService $netsuite;
+    /*protected NetsuiteService $netsuite;
 
     public function __construct(NetsuiteService $netsuite)
+    {
+        $this->netsuite = $netsuite;
+    }*/
+
+    protected NetsuiteServiceSandBox $netsuite;
+
+    public function __construct(NetsuiteServiceSandBox $netsuite)
     {
         $this->netsuite = $netsuite;
     }
@@ -234,7 +242,5 @@ GROUP BY
     // }
 
 
-    private function queryClientes()
-    {
-    }
+    private function queryClientes() {}
 }
